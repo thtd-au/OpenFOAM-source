@@ -25,7 +25,7 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Application
-    pimpleFoam.C
+    pimpleFoamReact.C
 
 Group
     grpIncompressibleSolvers
