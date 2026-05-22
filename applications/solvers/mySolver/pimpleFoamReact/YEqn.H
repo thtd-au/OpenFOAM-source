@@ -14,7 +14,6 @@ volScalarField Yt
     dimensionedScalar("zero", dimless, 0.0)
 );
 
-// label inertIndex = findIndex(species, inertSpecie);
 label inertIndex = species.find(inertSpecie);
 
 forAll(Y, i)
