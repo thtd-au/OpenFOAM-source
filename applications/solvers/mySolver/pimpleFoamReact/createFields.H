@@ -44,5 +44,48 @@ autoPtr<incompressible::turbulenceModel> turbulence
     incompressible::turbulenceModel::New(U, phi, laminarTransport)
 );
 
+Info<< "Reading reactions dictionary\n" << endl;
+
+IOdictionary reactions
+(
+    IOobject
+    (
+        "reactions",
+        runTime.constant(),
+        mesh,
+        IOobject::MUST_READ,
+        IOobject::NO_WRITE
+    )
+);
+
+wordList species(reactions.lookup("species"));
+word inertSpecie(reactions.lookup("inertSpecie"));
+
+const dictionary& diffusivityDict = reactions.subDict("diffusivity");
+
+PtrList<volScalarField> Y(species.size());
+
+forAll(species, i)
+{
+    Info<< "Reading species field " << species[i] << endl;
+
+    Y.set
+    (
+        i,
+        new volScalarField
+        (
+            IOobject
+            (
+                species[i],
+                runTime.timeName(),
+                mesh,
+                IOobject::MUST_READ,
+                IOobject::AUTO_WRITE
+            ),
+            mesh
+        )
+    );
+}
+
 #include "createMRF.H"
 #include "createFvOptions.H"
