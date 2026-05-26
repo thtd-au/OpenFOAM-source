@@ -43,8 +43,18 @@ forAll(Y, i)
         YiEqn.solve(Yi.name());
         fvOptions.correct(Yi);
 
+        Info<< Yi.name()
+        << " before clipping min/max = "
+        << min(Yi).value() << " / "
+        << max(Yi).value() << endl;
+
         Yi.max(0.0);
         // Yi.min(1.0); // can hide conservation errors and is therefore not active 
+
+        Info<< Yi.name()
+        << " after clipping min/max = "
+        << min(Yi).value() << " / "
+        << max(Yi).value() << endl;
 
         Yt += Yi;
     }
@@ -56,3 +66,4 @@ if (inertIndex >= 0)
     Y[inertIndex].max(0.0);
     Y[inertIndex].correctBoundaryConditions();
 }
+

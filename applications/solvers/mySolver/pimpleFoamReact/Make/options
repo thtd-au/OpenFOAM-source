@@ -23,4 +23,7 @@ EXE_LIBS = \
     -ltopoChangerFvMesh \
     -latmosphericModels \
     -lregionFaModels \
-    -lfiniteArea
+    -lfiniteArea \
+    -L$(FOAM_USER_LIBBIN) \
+    -lfaradaicBCs
+    
