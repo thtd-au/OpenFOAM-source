@@ -83,11 +83,21 @@ if (inertIndex >= 0)
     x[inertIndex] = scalar(1) - xt;
     x[inertIndex].max(0.0);
     x[inertIndex].correctBoundaryConditions();
+
+    Info<< "inert species " << x[inertIndex].name()
+        << " min/max = "
+        << min(x[inertIndex]).value() << " / "
+        << max(x[inertIndex]).value() << endl;
 }
 
 forAll(x, i)
 {
-    xTotal += x[i];
+    Info<< x[i].name()
+        << " min/max = "
+        << min(x[i]).value() << " / "
+        << max(x[i]).value() << endl;
+    
+        xTotal += x[i];
 }
 
 Info<< "total mole fraction xTotal min/max = "

@@ -169,17 +169,6 @@ void faradaicMoleFractionFluxFvPatchScalarField::updateCoeffs()
     gradient() =
         stoichCoeff_*currentDensity_
        /(nElectrons_*F*D*cSol);
-
-    Info<< "faradaicMoleFractionFlux: species=" << specieName
-    << " patch=" << patch().name()
-    // << " stoichCoeff=" << stoichCoeff_
-    // << " nElectrons=" << nElectrons_
-    // << " currentDensity=" << currentDensity_
-    // << " F=" << F
-    // << " D=" << D
-    // << " cSol=" << cSol
-    << " gradient=" << gradient()[0]
-    << nl;
     
     fixedGradientFvPatchScalarField::updateCoeffs();
 }
