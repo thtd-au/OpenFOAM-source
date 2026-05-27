@@ -140,7 +140,7 @@ void faradaicMoleFractionFluxFvPatchScalarField::updateCoeffs()
         reactions.getOrDefault<scalar>("FaradayConstant", 96485.3329);
 
     const scalar cSol =
-        reactions.get<scalar>("solutionConcentration");
+        reactions.get<scalar>("totalMolarConcentration");
 
     const dictionary& diffusivityDict = reactions.subDict("diffusivity");
 
@@ -163,7 +163,7 @@ void faradaicMoleFractionFluxFvPatchScalarField::updateCoeffs()
     if (cSol <= SMALL)
     {
         FatalIOErrorInFunction(reactions)
-            << "solutionConcentration must be positive" << exit(FatalIOError);
+            << "totalMolarConcentration must be positive" << exit(FatalIOError);
     }
 
     gradient() =

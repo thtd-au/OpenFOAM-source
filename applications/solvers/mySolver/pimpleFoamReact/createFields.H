@@ -63,13 +63,13 @@ word inertSpecie(reactions.lookup("inertSpecie"));
 
 const dictionary& diffusivityDict = reactions.subDict("diffusivity");
 
-PtrList<volScalarField> Y(species.size());
+PtrList<volScalarField> x(species.size());
 
 forAll(species, i)
 {
     Info<< "Reading species field " << species[i] << endl;
 
-    Y.set
+    x.set
     (
         i,
         new volScalarField
