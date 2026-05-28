@@ -1,5 +1,3 @@
-Info<< "Solving mole fraction equations" << endl;
-
 volScalarField xt
 (
     IOobject
@@ -66,28 +64,11 @@ forAll(x, i)
     }
 }
 
-Info<< "sum non-inert mole fractions xt min/max = "
-    << min(xt).value() << " / "
-    << max(xt).value() << endl;
-
-if (max(xt).value() > 1.0)
-{
-    WarningInFunction
-        << "Sum of non-inert mole fractions exceeds 1. "
-        << "Inert species will become negative before clipping."
-        << endl;
-}
-
 if (inertIndex >= 0)
 {
     x[inertIndex] = scalar(1) - xt;
     x[inertIndex].max(0.0);
     x[inertIndex].correctBoundaryConditions();
-
-    Info<< "inert species " << x[inertIndex].name()
-        << " min/max = "
-        << min(x[inertIndex]).value() << " / "
-        << max(x[inertIndex]).value() << endl;
 }
 
 forAll(x, i)
@@ -98,6 +79,18 @@ forAll(x, i)
         << max(x[i]).value() << endl;
     
         xTotal += x[i];
+}
+
+Info<< "sum non-inert mole fractions xt min/max = "
+    << min(xt).value() << " / "
+    << max(xt).value() << endl;
+
+if (max(xt).value() > 1.0)
+{
+    WarningInFunction
+        << "Sum of non-inert mole fractions exceeds 1. "
+        << "Inert species will become negative before clipping."
+        << endl;
 }
 
 Info<< "total mole fraction xTotal min/max = "
