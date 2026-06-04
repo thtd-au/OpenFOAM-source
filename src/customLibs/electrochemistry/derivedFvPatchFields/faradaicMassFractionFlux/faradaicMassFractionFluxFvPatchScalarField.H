@@ -1,12 +1,12 @@
-#ifndef faradaicMoleFractionFluxFvPatchScalarField_H
-#define faradaicMoleFractionFluxFvPatchScalarField_H
+#ifndef faradaicMassFractionFluxFvPatchScalarField_H
+#define faradaicMassFractionFluxFvPatchScalarField_H
 
 #include "fixedGradientFvPatchFields.H"
 
 namespace Foam
 {
 
-class faradaicMoleFractionFluxFvPatchScalarField
+class faradaicMassFractionFluxFvPatchScalarField
 :
     public fixedGradientFvPatchScalarField
 {
@@ -16,37 +16,37 @@ class faradaicMoleFractionFluxFvPatchScalarField
 
 public:
 
-    TypeName("faradaicMoleFractionFlux");       // name used in type field for BC in 0/species 
+    TypeName("faradaicMassFractionFlux");       // name used in type field for BC in 0/species 
 
-    faradaicMoleFractionFluxFvPatchScalarField
+    faradaicMassFractionFluxFvPatchScalarField
     (
         const fvPatch&,
         const DimensionedField<scalar, volMesh>&
     );
 
-    faradaicMoleFractionFluxFvPatchScalarField
+    faradaicMassFractionFluxFvPatchScalarField
     (
-        const faradaicMoleFractionFluxFvPatchScalarField&,
+        const faradaicMassFractionFluxFvPatchScalarField&,
         const fvPatch&,
         const DimensionedField<scalar, volMesh>&,
         const fvPatchFieldMapper&
     );
 
-    faradaicMoleFractionFluxFvPatchScalarField
+    faradaicMassFractionFluxFvPatchScalarField
     (
         const fvPatch&,
         const DimensionedField<scalar, volMesh>&,
         const dictionary&
     );
 
-    faradaicMoleFractionFluxFvPatchScalarField
+    faradaicMassFractionFluxFvPatchScalarField
     (
-        const faradaicMoleFractionFluxFvPatchScalarField&
+        const faradaicMassFractionFluxFvPatchScalarField&
     );
 
-    faradaicMoleFractionFluxFvPatchScalarField
+    faradaicMassFractionFluxFvPatchScalarField
     (
-        const faradaicMoleFractionFluxFvPatchScalarField&,
+        const faradaicMassFractionFluxFvPatchScalarField&,
         const DimensionedField<scalar, volMesh>&
     );
 
@@ -54,7 +54,7 @@ public:
     {
         return tmp<fvPatchScalarField>
         (
-            new faradaicMoleFractionFluxFvPatchScalarField(*this)
+            new faradaicMassFractionFluxFvPatchScalarField(*this)
         );
     }
 
@@ -65,7 +65,7 @@ public:
     {
         return tmp<fvPatchScalarField>
         (
-            new faradaicMoleFractionFluxFvPatchScalarField(*this, iF)
+            new faradaicMassFractionFluxFvPatchScalarField(*this, iF)
         );
     }
 

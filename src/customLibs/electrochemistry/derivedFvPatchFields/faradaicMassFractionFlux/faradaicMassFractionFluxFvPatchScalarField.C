@@ -1,4 +1,4 @@
-#include "faradaicMoleFractionFluxFvPatchScalarField.H"
+#include "faradaicMassFractionFluxFvPatchScalarField.H"
 #include "addToRunTimeSelectionTable.H"
 #include "fvPatchFields.H"
 #include "fvPatchFieldMapper.H"
@@ -9,25 +9,25 @@
 namespace Foam
 {
 
-defineTypeNameAndDebug(faradaicMoleFractionFluxFvPatchScalarField, 0);
+defineTypeNameAndDebug(faradaicMassFractionFluxFvPatchScalarField, 0);
 
 addToRunTimeSelectionTable
 (
     fvPatchScalarField,
-    faradaicMoleFractionFluxFvPatchScalarField,
+    faradaicMassFractionFluxFvPatchScalarField,
     dictionary
 );
 
 addToRunTimeSelectionTable
 (
     fvPatchScalarField,
-    faradaicMoleFractionFluxFvPatchScalarField,
+    faradaicMassFractionFluxFvPatchScalarField,
     patchMapper
 );
 
 
-faradaicMoleFractionFluxFvPatchScalarField::
-faradaicMoleFractionFluxFvPatchScalarField
+faradaicMassFractionFluxFvPatchScalarField::
+faradaicMassFractionFluxFvPatchScalarField
 (
     const fvPatch& p,
     const DimensionedField<scalar, volMesh>& iF
@@ -40,10 +40,10 @@ faradaicMoleFractionFluxFvPatchScalarField
 {}
 
 
-faradaicMoleFractionFluxFvPatchScalarField::
-faradaicMoleFractionFluxFvPatchScalarField
+faradaicMassFractionFluxFvPatchScalarField::
+faradaicMassFractionFluxFvPatchScalarField
 (
-    const faradaicMoleFractionFluxFvPatchScalarField& ptf,
+    const faradaicMassFractionFluxFvPatchScalarField& ptf,
     const fvPatch& p,
     const DimensionedField<scalar, volMesh>& iF,
     const fvPatchFieldMapper& mapper
@@ -56,8 +56,8 @@ faradaicMoleFractionFluxFvPatchScalarField
 {}
 
 
-faradaicMoleFractionFluxFvPatchScalarField::
-faradaicMoleFractionFluxFvPatchScalarField
+faradaicMassFractionFluxFvPatchScalarField::
+faradaicMassFractionFluxFvPatchScalarField
 (
     const fvPatch& p,
     const DimensionedField<scalar, volMesh>& iF,
@@ -87,10 +87,10 @@ faradaicMoleFractionFluxFvPatchScalarField
 }
 
 
-faradaicMoleFractionFluxFvPatchScalarField::
-faradaicMoleFractionFluxFvPatchScalarField
+faradaicMassFractionFluxFvPatchScalarField::
+faradaicMassFractionFluxFvPatchScalarField
 (
-    const faradaicMoleFractionFluxFvPatchScalarField& ptf
+    const faradaicMassFractionFluxFvPatchScalarField& ptf
 )
 :
     fixedGradientFvPatchScalarField(ptf),
@@ -100,10 +100,10 @@ faradaicMoleFractionFluxFvPatchScalarField
 {}
 
 
-faradaicMoleFractionFluxFvPatchScalarField::
-faradaicMoleFractionFluxFvPatchScalarField
+faradaicMassFractionFluxFvPatchScalarField::
+faradaicMassFractionFluxFvPatchScalarField
 (
-    const faradaicMoleFractionFluxFvPatchScalarField& ptf,
+    const faradaicMassFractionFluxFvPatchScalarField& ptf,
     const DimensionedField<scalar, volMesh>& iF
 )
 :
@@ -114,7 +114,7 @@ faradaicMoleFractionFluxFvPatchScalarField
 {}
 
 
-void faradaicMoleFractionFluxFvPatchScalarField::updateCoeffs()
+void faradaicMassFractionFluxFvPatchScalarField::updateCoeffs()
 {
     if (updated())
     {
@@ -136,13 +136,34 @@ void faradaicMoleFractionFluxFvPatchScalarField::updateCoeffs()
         )
     );
 
-    const scalar F =
-        reactions.getOrDefault<scalar>("FaradayConstant", 96485.3329);
+    IOdictionary transportProperties    
+    (
+        IOobject
+        (
+            "transportProperties",
+            mesh.time().constant(),
+            mesh,
+            IOobject::MUST_READ,
+            IOobject::NO_WRITE
+        )
+    );
 
-    const scalar cSol =
-        reactions.get<scalar>("totalMolarConcentration");
+    const scalar F = reactions.getOrDefault<scalar>("FaradayConstant", 96485.3329);
 
     const dictionary& diffusivityDict = reactions.subDict("diffusivity");
+
+    const dictionary& molarMassDict = reactions.subDict("molarMass");
+
+    const scalar Di = diffusivityDict.get<scalar>(specieName);
+
+    const scalar Mi = molarMassDict.get<scalar>(specieName);
+
+    const dimensionedScalar rho
+    (
+        "rho",
+        dimDensity,
+        transportProperties
+    );
 
     if (!diffusivityDict.found(specieName))
     {
@@ -151,30 +172,42 @@ void faradaicMoleFractionFluxFvPatchScalarField::updateCoeffs()
             << " in constant/reactions/diffusivity" << exit(FatalIOError);
     }
 
-    const scalar D = diffusivityDict.get<scalar>(specieName);
+    if (!molarMassDict.found(specieName))
+    {
+        FatalIOErrorInFunction(reactions)
+            << "No molarMass entry for species " << specieName
+            << " in constant/reactions/molarMass" << exit(FatalIOError);
+    }
 
-    if (D <= SMALL)
+    if (Di <= SMALL)
     {
         FatalIOErrorInFunction(reactions)
             << "Diffusivity for species " << specieName
             << " must be positive" << exit(FatalIOError);
     }
 
-    if (cSol <= SMALL)
+    if (Mi <= SMALL)
     {
         FatalIOErrorInFunction(reactions)
-            << "totalMolarConcentration must be positive" << exit(FatalIOError);
+            << "molarMass for species " << specieName
+            << " must be positive" << exit(FatalIOError);
+    }
+
+    if (rho.value() <= SMALL)
+    {
+        FatalIOErrorInFunction(transportProperties)
+            << "rho must be positive" << exit(FatalIOError);
     }
 
     gradient() =
-        stoichCoeff_*currentDensity_
-       /(nElectrons_*F*D*cSol);
+        -stoichCoeff_*Mi*currentDensity_
+       /(rho.value()*nElectrons_*F*Di);
     
     fixedGradientFvPatchScalarField::updateCoeffs();
 }
 
 
-void faradaicMoleFractionFluxFvPatchScalarField::write(Ostream& os) const
+void faradaicMassFractionFluxFvPatchScalarField::write(Ostream& os) const
 {
     fvPatchScalarField::write(os);
     os.writeEntry("stoichCoeff", stoichCoeff_);

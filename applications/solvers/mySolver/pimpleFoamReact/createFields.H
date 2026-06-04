@@ -61,15 +61,13 @@ IOdictionary reactions
 wordList species(reactions.lookup("species"));
 word inertSpecie(reactions.lookup("inertSpecie"));
 
-const dictionary& diffusivityDict = reactions.subDict("diffusivity");
-
-PtrList<volScalarField> x(species.size());
+PtrList<volScalarField> Y(species.size());
 
 forAll(species, i)
 {
     Info<< "Reading species field " << species[i] << endl;
 
-    x.set
+    Y.set
     (
         i,
         new volScalarField
