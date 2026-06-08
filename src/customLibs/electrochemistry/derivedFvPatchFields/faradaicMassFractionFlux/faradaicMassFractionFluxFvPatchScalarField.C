@@ -200,7 +200,7 @@ void faradaicMassFractionFluxFvPatchScalarField::updateCoeffs()
     }
 
     gradient() =
-        -stoichCoeff_*Mi*currentDensity_
+        stoichCoeff_*Mi*currentDensity_
        /(rho.value()*nElectrons_*F*Di);
     
     fixedGradientFvPatchScalarField::updateCoeffs();
