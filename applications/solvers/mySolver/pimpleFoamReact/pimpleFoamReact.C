@@ -103,6 +103,7 @@ int main(int argc, char *argv[])
     #include "initContinuityErrs.H"
     #include "createDyMControls.H"
     #include "createFields.H"
+    #include "createSpeciesConservation.H"
     #include "createUfIfPresent.H"
     #include "CourantNo.H"
     #include "setInitialDeltaT.H"
@@ -170,6 +171,11 @@ int main(int argc, char *argv[])
 
             #include "UEqn.H"
             #include "YEqn.H"
+
+            if (pimple.finalIter())
+            {
+                #include "speciesConservation.H"
+            }
 
             // --- Pressure corrector loop
             while (pimple.correct())
