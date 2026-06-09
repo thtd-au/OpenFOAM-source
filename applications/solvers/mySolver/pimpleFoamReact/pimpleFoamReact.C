@@ -187,7 +187,7 @@ int main(int argc, char *argv[])
         #include "YEqn.H"
         #include "speciesConservation.H"
         // Convert mass-fraction to concentration 
-        // #include "cFields.H"
+        #include "cFields.H"
 
         runTime.write();
 

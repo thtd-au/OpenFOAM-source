@@ -85,5 +85,46 @@ forAll(species, i)
     );
 }
 
+const dictionary& molarMassDict = reactions.subDict("molarMass");
+
+PtrList<volScalarField> c(Y.size());
+
+const dimensionedScalar rho
+(
+    "rho",
+    dimDensity,
+    laminarTransport
+);
+
+forAll(Y, i)
+{
+    const volScalarField& Yi = Y[i];
+
+    dimensionedScalar Mi
+    (
+        "M_" + Yi.name(),
+        dimMass/dimMoles,
+        molarMassDict.get<scalar>(Yi.name())
+    );
+
+    c.set
+    (
+        i,
+        new volScalarField
+        (
+            IOobject
+            (
+                "c_" + Yi.name(),
+                runTime.timeName(),
+                mesh,
+                IOobject::NO_READ,
+                IOobject::AUTO_WRITE
+            ),
+            rho*Yi/Mi
+        )
+    );
+}
+
 #include "createMRF.H"
 #include "createFvOptions.H"
+
