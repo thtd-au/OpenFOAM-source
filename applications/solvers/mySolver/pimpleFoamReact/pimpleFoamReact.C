@@ -188,6 +188,8 @@ int main(int argc, char *argv[])
         #include "speciesConservation.H"
         // Convert mass-fraction to concentration 
         #include "cFields.H"
+        // Henry-law equilibrium pressure and saturation diagnostics
+        #include "SEqn.H"
 
         runTime.write();
 

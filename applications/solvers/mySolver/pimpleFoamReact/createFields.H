@@ -125,6 +125,118 @@ forAll(Y, i)
     );
 }
 
+// Henry-law saturation diagnostics setup
+dimensionedScalar pAbsRef
+(
+    "absolutePressureReference",
+    dimPressure,
+    reactions.getOrDefault<scalar>("absolutePressureReference", 101325.0)
+);
+
+wordList henrySpecies(0);
+labelList henrySpeciesIndex(0);
+scalarList henryConstants(0);
+
+if (reactions.found("henryConstants") || reactions.found("henryConstant"))
+{
+    const dictionary& henryDict = reactions.found("henryConstants")
+      ? reactions.subDict("henryConstants")
+      : reactions.subDict("henryConstant");
+
+    henrySpecies = henryDict.toc();
+    henrySpeciesIndex.setSize(henrySpecies.size(), -1);
+    henryConstants.setSize(henrySpecies.size(), 0.0);
+
+    Info<< "Creating Henry saturation diagnostics for species:" << nl;
+
+    forAll(henrySpecies, hi)
+    {
+        const word& specieName = henrySpecies[hi];
+        const label speciei = species.find(specieName);
+
+        if (speciei < 0)
+        {
+            FatalIOErrorInFunction(reactions)
+                << "Species " << specieName
+                << " is listed in henryConstants but not in species"
+                << exit(FatalIOError);
+        }
+
+        const scalar H = henryDict.get<scalar>(specieName);
+
+        if (H <= SMALL)
+        {
+            FatalIOErrorInFunction(reactions)
+                << "Henry constant for species " << specieName
+                << " must be positive"
+                << exit(FatalIOError);
+        }
+
+        henrySpeciesIndex[hi] = speciei;
+        henryConstants[hi] = H;
+
+        Info<< "  " << specieName << ": H = " << H
+            << " mol/(m3 Pa)" << nl;
+    }
+
+    Info<< "absolutePressureReference = " << pAbsRef.value()
+        << " Pa" << nl << endl;
+}
+else
+{
+    Info<< "Henry saturation diagnostics: none" << nl << endl;
+}
+
+PtrList<volScalarField> pEqHenry(henrySpecies.size());
+PtrList<volScalarField> saturation(henrySpecies.size());
+
+forAll(henrySpecies, hi)
+{
+    const label speciei = henrySpeciesIndex[hi];
+    const word& specieName = henrySpecies[hi];
+
+    dimensionedScalar Hi
+    (
+        "H_" + specieName,
+        dimMoles/dimVolume/dimPressure,
+        henryConstants[hi]
+    );
+
+    pEqHenry.set
+    (
+        hi,
+        new volScalarField
+        (
+            IOobject
+            (
+                "pEq_" + specieName,
+                runTime.timeName(),
+                mesh,
+                IOobject::NO_READ,
+                IOobject::AUTO_WRITE
+            ),
+            c[speciei]/Hi
+        )
+    );
+
+    saturation.set
+    (
+        hi,
+        new volScalarField
+        (
+            IOobject
+            (
+                "S_" + specieName,
+                runTime.timeName(),
+                mesh,
+                IOobject::NO_READ,
+                IOobject::AUTO_WRITE
+            ),
+            pEqHenry[hi]/(pAbsRef + rho*p)
+        )
+    );
+}
+
 #include "createMRF.H"
 #include "createFvOptions.H"
 
