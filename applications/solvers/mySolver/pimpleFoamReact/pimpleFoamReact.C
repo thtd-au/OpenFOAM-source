@@ -170,12 +170,6 @@ int main(int argc, char *argv[])
             }
 
             #include "UEqn.H"
-            #include "YEqn.H"
-
-            if (pimple.finalIter())
-            {
-                #include "speciesConservation.H"
-            }
 
             // --- Pressure corrector loop
             while (pimple.correct())
@@ -189,6 +183,11 @@ int main(int argc, char *argv[])
                 turbulence->correct();
             }
         }
+        // Solve species transport based on corrected velocity 
+        #include "YEqn.H"
+        #include "speciesConservation.H"
+        // Convert mass-fraction to concentration 
+        // #include "cFields.H"
 
         runTime.write();
 
