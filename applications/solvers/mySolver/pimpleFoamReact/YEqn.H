@@ -31,6 +31,15 @@ label inertIndex = species.find(inertSpecie);
 
 const dictionary& diffusivityDict = reactions.subDict("diffusivity");
 
+// Reset reaction source fields
+forAll(Y, i)
+{
+    RY[i] = dimensionedScalar("zero", dimless/dimTime, 0.0);
+}
+
+// Fill RY from constant/reactions
+#include "updateReactionSources.H"
+
 forAll(Y, i)
 {
     if (i != inertIndex)
@@ -50,7 +59,8 @@ forAll(Y, i)
           + fvm::div(phi, Yi)
           - fvm::laplacian(Di, Yi)
          ==
-            fvOptions(Yi)
+            RY[i]
+          + fvOptions(Yi)
         );
 
         YiEqn.relax();

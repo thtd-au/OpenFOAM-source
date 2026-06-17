@@ -185,6 +185,7 @@ int main(int argc, char *argv[])
         }
         // Solve species transport based on corrected velocity 
         #include "YEqn.H"
+        #include "updateReactionSources.H"
         #include "speciesConservation.H"
         // Convert mass-fraction to concentration 
         #include "cFields.H"

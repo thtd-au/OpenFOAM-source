@@ -63,18 +63,19 @@ IOdictionary reactions
 );
 
 //
-// ############################################ create species  ############################################
+// ############################################ create species mass-fraction field ############################################
 //
 
 wordList species(reactions.lookup("species"));
 word inertSpecie(reactions.lookup("inertSpecie"));
 
 PtrList<volScalarField> Y(species.size());
+PtrList<volScalarField> RY(species.size());
 
 forAll(species, i)
 {
     Info<< "Reading species field Y_" << species[i] << endl;
-
+    
     Y.set
     (
         i,
@@ -89,6 +90,24 @@ forAll(species, i)
                 IOobject::AUTO_WRITE
             ),
             mesh
+        )
+    );
+
+    RY.set
+    (
+        i,
+        new volScalarField
+        (
+            IOobject
+            (
+                "RY_" + species[i],
+                runTime.timeName(),
+                mesh,
+                IOobject::NO_READ,
+                IOobject::AUTO_WRITE
+            ),
+            mesh,
+            dimensionedScalar("zero", dimless/dimTime, 0.0)
         )
     );
 }
