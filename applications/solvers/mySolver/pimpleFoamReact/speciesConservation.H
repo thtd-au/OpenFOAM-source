@@ -27,8 +27,8 @@ if (speciesConservationActive)
         }
 
         const volScalarField& Yi = Y[i];
-        const scalar Di = diffusivityDict.get<scalar>(Yi.name());
-        const scalar Mi = molarMassDict.get<scalar>(Yi.name());
+        const scalar Di = diffusivityDict.get<scalar>(species[i]);
+        const scalar Mi = molarMassDict.get<scalar>(species[i]);
         const scalar rhoByMi = rho.value()/Mi;
         const scalar rhoDiByMi = rho.value()*Di/Mi;
 
@@ -179,7 +179,7 @@ if (speciesConservationActive)
         {
             if (speciesConservationMode == "full")
             {
-                Info<< "  " << Yi.name() << nl
+                Info<< "  " << species[i] << nl
                     << "    inventory:" << nl
                     << "      N0=" << speciesConservationN0[i]
                     << " Nt=" << Nt
@@ -209,7 +209,7 @@ if (speciesConservationActive)
             }
             else
             {
-                Info<< "  " << Yi.name()
+                Info<< "  " << species[i]
                     << " dN=" << dN
                     << " flowIn=" << speciesConservationFlowIn[i]
                     << " flowOut=" << speciesConservationFlowOut[i]
@@ -230,7 +230,7 @@ if (speciesConservationActive)
                         if (mag(leakRate) > speciesConservationWarningTolerance)
                         {
                             WarningInFunction
-                                << "species " << Yi.name()
+                                << "species " << species[i]
                                 << ": unaccounted patch "
                                 << mesh.boundaryMesh()[patchi].name()
                                 << " has net transport rate " << leakRate
@@ -265,7 +265,7 @@ if (speciesConservationActive)
 
             if (speciesConservationMode == "full")
             {
-                os  << runTime.value() << ' ' << Yi.name() << ' '
+                os  << runTime.value() << ' ' << species[i] << ' '
                     << speciesConservationN0[i] << ' ' << Nt << ' ' << dN << ' '
                     << speciesConservationFlowIn[i] << ' '
                     << speciesConservationFlowOut[i] << ' '
@@ -278,7 +278,7 @@ if (speciesConservationActive)
             }
             else
             {
-                os  << runTime.value() << ' ' << Yi.name() << ' '
+                os  << runTime.value() << ' ' << species[i] << ' '
                     << dN << ' '
                     << speciesConservationFlowIn[i] << ' '
                     << speciesConservationFlowOut[i] << ' '

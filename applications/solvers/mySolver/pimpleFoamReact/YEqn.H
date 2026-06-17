@@ -39,9 +39,9 @@ forAll(Y, i)
 
         dimensionedScalar Di
         (
-            "D_" + Yi.name(),
+            "D_" + species[i],
             dimArea/dimTime,
-            diffusivityDict.get<scalar>(Yi.name())
+            diffusivityDict.get<scalar>(species[i])
         );
 
         fvScalarMatrix YiEqn

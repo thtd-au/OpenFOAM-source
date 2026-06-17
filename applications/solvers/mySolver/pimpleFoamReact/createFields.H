@@ -44,6 +44,10 @@ autoPtr<incompressible::turbulenceModel> turbulence
     incompressible::turbulenceModel::New(U, phi, laminarTransport)
 );
 
+//
+// ############################################ create reaction dict ############################################
+//
+
 Info<< "Reading reactions dictionary\n" << endl;
 
 IOdictionary reactions
@@ -58,6 +62,10 @@ IOdictionary reactions
     )
 );
 
+//
+// ############################################ create species  ############################################
+//
+
 wordList species(reactions.lookup("species"));
 word inertSpecie(reactions.lookup("inertSpecie"));
 
@@ -65,7 +73,7 @@ PtrList<volScalarField> Y(species.size());
 
 forAll(species, i)
 {
-    Info<< "Reading species field " << species[i] << endl;
+    Info<< "Reading species field Y_" << species[i] << endl;
 
     Y.set
     (
@@ -74,7 +82,7 @@ forAll(species, i)
         (
             IOobject
             (
-                species[i],
+                "Y_" + species[i],
                 runTime.timeName(),
                 mesh,
                 IOobject::MUST_READ,
@@ -84,6 +92,10 @@ forAll(species, i)
         )
     );
 }
+
+//
+// ############################################ convert to concentration ############################################
+//
 
 const dictionary& molarMassDict = reactions.subDict("molarMass");
 
@@ -102,9 +114,9 @@ forAll(Y, i)
 
     dimensionedScalar Mi
     (
-        "M_" + Yi.name(),
+        "M_" + species[i],
         dimMass/dimMoles,
-        molarMassDict.get<scalar>(Yi.name())
+        molarMassDict.get<scalar>(species[i])
     );
 
     c.set
@@ -114,7 +126,7 @@ forAll(Y, i)
         (
             IOobject
             (
-                "c_" + Yi.name(),
+                "c_" + species[i],
                 runTime.timeName(),
                 mesh,
                 IOobject::NO_READ,
@@ -125,12 +137,44 @@ forAll(Y, i)
     );
 }
 
+//
+// ############################################ saturation diagnostics  ############################################
+//
+
 // Henry-law saturation diagnostics setup
 dimensionedScalar pAbsRef
 (
     "absolutePressureReference",
     dimPressure,
     reactions.getOrDefault<scalar>("absolutePressureReference", 101325.0)
+);
+
+volScalarField pEq_tot
+(
+    IOobject
+    (
+        "pEq_tot",
+        runTime.timeName(),
+        mesh,
+        IOobject::NO_READ,
+        IOobject::AUTO_WRITE
+    ),
+    mesh,
+    dimensionedScalar("zero", dimPressure, 0.0)
+);
+
+volScalarField S_tot
+(
+    IOobject
+    (
+        "S_tot",
+        runTime.timeName(),
+        mesh,
+        IOobject::NO_READ,
+        IOobject::AUTO_WRITE
+    ),
+    mesh,
+    dimensionedScalar("zero", dimless, 0.0)
 );
 
 wordList henrySpecies(0);
@@ -190,6 +234,26 @@ else
 PtrList<volScalarField> pEqHenry(henrySpecies.size());
 PtrList<volScalarField> saturation(henrySpecies.size());
 
+dimensionedScalar pSmall
+(
+    "pSmall",
+    dimPressure,
+    SMALL
+);
+
+volScalarField pAbs
+(
+    IOobject
+    (
+        "pAbs_tmp",
+        runTime.timeName(),
+        mesh,
+        IOobject::NO_READ,
+        IOobject::NO_WRITE
+    ),
+    pAbsRef + rho*p
+);
+
 forAll(henrySpecies, hi)
 {
     const label speciei = henrySpeciesIndex[hi];
@@ -232,10 +296,19 @@ forAll(henrySpecies, hi)
                 IOobject::NO_READ,
                 IOobject::AUTO_WRITE
             ),
-            pEqHenry[hi]/(pAbsRef + rho*p)
+            // pEqHenry[hi]/(pAbsRef + rho*p)
+            pEqHenry[hi]/max(pAbs, pSmall)
         )
     );
+
+    pEq_tot += pEqHenry[hi];
 }
+// S_tot = pEq_tot/(pAbsRef + rho*p);
+S_tot = pEq_tot/max(pAbs, pSmall);
+
+pEq_tot.correctBoundaryConditions();
+S_tot.correctBoundaryConditions();
+
 
 #include "createMRF.H"
 #include "createFvOptions.H"

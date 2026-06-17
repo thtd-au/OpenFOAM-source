@@ -8,9 +8,9 @@ forAll(Y, i)
 
     dimensionedScalar Mi
     (
-        "M_" + Yi.name(),
+        "M_" + species[i],
         dimMass/dimMoles,
-        molarMassDict.get<scalar>(Yi.name())
+        molarMassDict.get<scalar>(species[i])
     );
 
     c[i] = rho*Yi/Mi;

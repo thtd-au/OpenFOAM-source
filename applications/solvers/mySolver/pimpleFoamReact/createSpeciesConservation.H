@@ -128,7 +128,7 @@ if (speciesConservationActive)
 
     forAll(Y, i)
     {
-        const scalar Mi = molarMassDict.get<scalar>(Y[i].name());
+        const scalar Mi = molarMassDict.get<scalar>(species[i]);
 
         speciesConservationN0[i] =
             rho.value()/Mi*gSum(Y[i].primitiveField()*mesh.V());

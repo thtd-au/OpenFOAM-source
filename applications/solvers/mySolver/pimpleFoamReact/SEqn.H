@@ -22,6 +22,8 @@ if (henrySpecies.size())
         pAbsRef + rho*p
     );
 
+    pEq_tot = dimensionedScalar("zero", dimPressure, 0.0);
+
     forAll(henrySpecies, hi)
     {
         const label speciei = henrySpeciesIndex[hi];
@@ -40,11 +42,7 @@ if (henrySpecies.size())
         saturation[hi] = pEqHenry[hi]/max(pAbs, pSmall);
         saturation[hi].correctBoundaryConditions();
 
-        // Info<< pEqHenry[hi].name()
-        //     << " min/max = "
-        //     << min(pEqHenry[hi]).value() << " / "
-        //     << max(pEqHenry[hi]).value()
-        //     << " Pa" << endl;
+        pEq_tot += pEqHenry[hi];
 
         Info<< saturation[hi].name()
             << " min/max = "
@@ -52,5 +50,21 @@ if (henrySpecies.size())
             << max(saturation[hi]).value()
             << endl;
     }
+    S_tot = pEq_tot/max(pAbs, pSmall);
+
+    pEq_tot.correctBoundaryConditions();    
+    S_tot.correctBoundaryConditions();
+
+    // Info<< pEq_tot.name()
+    //     << " min/max = "
+    //     << min(pEq_tot).value() << " / "
+    //     << max(pEq_tot).value()
+    //     << " Pa" << endl;
+
+    Info<< S_tot.name()
+        << " min/max = "
+        << min(S_tot).value() << " / "
+        << max(S_tot).value()
+        << endl;
 }
 

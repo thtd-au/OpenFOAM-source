@@ -122,7 +122,15 @@ void faradaicMassFractionFluxFvPatchScalarField::updateCoeffs()
     }
 
     const fvMesh& mesh = patch().boundaryMesh().mesh();
-    const word specieName = internalField().name();
+
+    // create species name by removing "Y_" from sepceis field 
+    const word fieldName = internalField().name();
+    word specieName = fieldName;
+    const word prefix("Y_");
+    if (specieName.startsWith(prefix))
+    {
+        specieName = specieName.substr(prefix.size());
+    }
 
     IOdictionary reactions
     (
@@ -153,7 +161,7 @@ void faradaicMassFractionFluxFvPatchScalarField::updateCoeffs()
     const dictionary& diffusivityDict = reactions.subDict("diffusivity");
 
     const dictionary& molarMassDict = reactions.subDict("molarMass");
-
+    
     const scalar Di = diffusivityDict.get<scalar>(specieName);
 
     const scalar Mi = molarMassDict.get<scalar>(specieName);
