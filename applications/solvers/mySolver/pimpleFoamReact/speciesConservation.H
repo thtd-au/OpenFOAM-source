@@ -38,6 +38,10 @@ if (speciesConservationActive)
         scalar diffOutRate = 0.0;
         scalar flowInRate = 0.0;
         scalar flowOutRate = 0.0;
+        // Total species generation [mol/s]
+        // Includes:
+        //   - electrode boundary generation
+        //   - volumetric reaction generation
         scalar genRate = 0.0;
 
         List<scalar> patchAdvIn(mesh.boundary().size(), 0.0);
@@ -147,6 +151,10 @@ if (speciesConservationActive)
         reduce(flowInRate, sumOp<scalar>());
         reduce(flowOutRate, sumOp<scalar>());
         reduce(genRate, sumOp<scalar>());
+
+        // Add volumetric reaction source to generation [mol/s]
+        const scalar rxnGenRate = rhoByMi*gSum(RY[i].primitiveField()*mesh.V());
+        genRate += rxnGenRate;
 
         speciesConservationAdvIn[i] += advInRate*dt;
         speciesConservationAdvOut[i] += advOutRate*dt;
