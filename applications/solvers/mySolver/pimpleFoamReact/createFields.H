@@ -62,6 +62,62 @@ IOdictionary reactions
     )
 );
 
+// Optional output of derived fields
+
+const Switch writeCFields
+(
+    reactions.getOrDefault<Switch>
+    (
+        "writeCFields",
+        false
+    )
+);
+
+const Switch writeRYFields
+(
+    reactions.getOrDefault<Switch>
+    (
+        "writeRYFields",
+        false
+    )
+);
+
+const Switch writePEqFields
+(
+    reactions.getOrDefault<Switch>
+    (
+        "writePEqFields",
+        false
+    )
+);
+
+const Switch writeSFields
+(
+    reactions.getOrDefault<Switch>
+    (
+        "writeSFields",
+        false
+    )
+);
+
+const Switch writePEqTotField
+(
+    reactions.getOrDefault<Switch>
+    (
+        "writePEqTotField",
+        false
+    )
+);
+
+const Switch writeSTotField
+(
+    reactions.getOrDefault<Switch>
+    (
+        "writeSTotField",
+        false
+    )
+);
+
 //
 // ############################################ create species mass-fraction field ############################################
 //
@@ -104,7 +160,9 @@ forAll(species, i)
                 runTime.timeName(),
                 mesh,
                 IOobject::NO_READ,
-                IOobject::AUTO_WRITE
+                writeRYFields
+                ? IOobject::AUTO_WRITE
+                : IOobject::NO_WRITE
             ),
             mesh,
             dimensionedScalar("zero", dimless/dimTime, 0.0)
@@ -149,7 +207,9 @@ forAll(Y, i)
                 runTime.timeName(),
                 mesh,
                 IOobject::NO_READ,
-                IOobject::AUTO_WRITE
+                writeCFields
+                ? IOobject::AUTO_WRITE
+                : IOobject::NO_WRITE
             ),
             rho*Yi/Mi
         )
@@ -176,7 +236,9 @@ volScalarField pEq_tot
         runTime.timeName(),
         mesh,
         IOobject::NO_READ,
-        IOobject::AUTO_WRITE
+        writePEqTotField
+          ? IOobject::AUTO_WRITE
+          : IOobject::NO_WRITE
     ),
     mesh,
     dimensionedScalar("zero", dimPressure, 0.0)
@@ -190,7 +252,9 @@ volScalarField S_tot
         runTime.timeName(),
         mesh,
         IOobject::NO_READ,
-        IOobject::AUTO_WRITE
+        writeSTotField
+            ? IOobject::AUTO_WRITE
+            : IOobject::NO_WRITE
     ),
     mesh,
     dimensionedScalar("zero", dimless, 0.0)
@@ -296,7 +360,9 @@ forAll(henrySpecies, hi)
                 runTime.timeName(),
                 mesh,
                 IOobject::NO_READ,
-                IOobject::AUTO_WRITE
+                writePEqFields
+                ? IOobject::AUTO_WRITE
+                : IOobject::NO_WRITE
             ),
             c[speciei]/Hi
         )
@@ -313,7 +379,9 @@ forAll(henrySpecies, hi)
                 runTime.timeName(),
                 mesh,
                 IOobject::NO_READ,
-                IOobject::AUTO_WRITE
+                writeSFields
+                ? IOobject::AUTO_WRITE
+                : IOobject::NO_WRITE
             ),
             // pEqHenry[hi]/(pAbsRef + rho*p)
             pEqHenry[hi]/max(pAbs, pSmall)
