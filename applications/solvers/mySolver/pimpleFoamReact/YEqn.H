@@ -83,31 +83,38 @@ if (inertIndex >= 0)
     Y[inertIndex].correctBoundaryConditions();
 }
 
-forAll(Y, i)
+if (printYFields)
 {
-    Info<< Y[i].name()
-        << " min/max = "
-        << min(Y[i]).value() << " / "
-        << max(Y[i]).value() << endl;
+    forAll(Y, i)
+    {
+        Info<< Y[i].name()
+            << " min/max = "
+            << min(Y[i]).value() << " / "
+            << max(Y[i]).value() << endl;
     
-        YTotal += Y[i];
+            YTotal += Y[i];
+    }
 }
 
-Info<< "sum non-inert mass fractions Yt min/max = "
-    << min(Yt).value() << " / "
-    << max(Yt).value() << endl;
-
-if (max(Yt).value() > 1.0)
+if (printDiagnostics)
 {
-    WarningInFunction
-        << "Sum of non-inert mass fractions exceeds 1. "
-        << "Inert species will become negative before clipping."
-        << endl;
+    Info<< "sum non-inert mass fractions Yt min/max = "
+        << min(Yt).value() << " / "
+        << max(Yt).value() << endl;
+
+    if (max(Yt).value() > 1.0)
+    {
+        WarningInFunction
+            << "Sum of non-inert mass fractions exceeds 1. "
+            << "Inert species will become negative before clipping."
+            << endl;
+    }
+
+    Info<< "total mass fraction YTotal min/max = "
+        << min(YTotal).value() << " / "
+        << max(YTotal).value() << endl;
+
+    Info<< "mass fraction closure error |YTotal - 1| max = "
+        << max(mag(YTotal - scalar(1))).value() << endl;
 }
 
-Info<< "total mass fraction YTotal min/max = "
-    << min(YTotal).value() << " / "
-    << max(YTotal).value() << endl;
-
-Info<< "mass fraction closure error |YTotal - 1| max = "
-    << max(mag(YTotal - scalar(1))).value() << endl;

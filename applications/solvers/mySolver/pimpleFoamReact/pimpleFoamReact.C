@@ -186,12 +186,6 @@ int main(int argc, char *argv[])
         // Solve species transport based on corrected velocity 
         #include "YEqn.H"
 
-        // check species conservation 
-        if (speciesConservationActive)
-        {
-            #include "speciesConservation.H"
-        }
-
         // create species concentration fields from mass-fraction
         if (runConcentration)
         {
@@ -202,6 +196,12 @@ int main(int argc, char *argv[])
         if (runSaturation)
         {
             #include "SEqn.H"
+        }
+
+        // check species conservation 
+        if (speciesConservationActive)
+        {
+            #include "speciesConservation.H"
         }
 
         runTime.write();

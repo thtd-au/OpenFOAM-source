@@ -115,6 +115,17 @@ if (runSaturation && !runConcentration)
         << exit(FatalIOError);
 }
 
+Switch printYFields(true);
+Switch printDiagnostics(true);
+
+if (controlDict.found("species"))
+{
+    const dictionary& speciesDict = controlDict.subDict("species");
+
+    printYFields = speciesDict.getOrDefault<Switch>("printYFields", true);
+    printDiagnostics = speciesDict.getOrDefault<Switch>("printDiagnostics", true);
+}
+
 //
 // ############################################ create species mass-fraction field ############################################
 //
