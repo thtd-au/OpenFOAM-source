@@ -11,9 +11,9 @@ scalar speciesConservationWarningTolerance(SMALL);
 // 0 = ignored/wall/unclassified, 1 = flow, 2 = electrode
 List<label> speciesConservationPatchRole(mesh.boundary().size(), 0);
 
-if (reactions.found("speciesConservation"))
+if (controlDict.found("speciesConservation"))
 {
-    const dictionary& scDict = reactions.subDict("speciesConservation");
+    const dictionary& scDict = controlDict.subDict("speciesConservation");
 
     speciesConservationMode = scDict.getOrDefault<word>
     (

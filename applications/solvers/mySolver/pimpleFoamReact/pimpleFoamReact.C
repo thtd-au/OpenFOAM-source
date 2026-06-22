@@ -185,12 +185,24 @@ int main(int argc, char *argv[])
         }
         // Solve species transport based on corrected velocity 
         #include "YEqn.H"
-        #include "updateReactionSources.H"
-        #include "speciesConservation.H"
-        // Convert mass-fraction to concentration 
-        #include "cFields.H"
-        // Henry-law equilibrium pressure and saturation diagnostics
-        #include "SEqn.H"
+
+        // check species conservation 
+        if (speciesConservationActive)
+        {
+            #include "speciesConservation.H"
+        }
+
+        // create species concentration fields from mass-fraction
+        if (runConcentration)
+        {
+            #include "cFields.H"
+        }
+        
+        // track species saturation 
+        if (runSaturation)
+        {
+            #include "SEqn.H"
+        }
 
         runTime.write();
 

@@ -62,61 +62,58 @@ IOdictionary reactions
     )
 );
 
-// Optional output of derived fields
+const dictionary& controlDict = runTime.controlDict();
 
-const Switch writeCFields
-(
-    reactions.getOrDefault<Switch>
-    (
-        "writeCFields",
-        false
-    )
-);
+Switch writeSources(false);
 
-const Switch writeRYFields
-(
-    reactions.getOrDefault<Switch>
-    (
-        "writeRYFields",
-        false
-    )
-);
+if (runTime.controlDict().found("reaction"))
+{
+    const dictionary& reactionDict =
+        runTime.controlDict().subDict("reaction");
 
-const Switch writePEqFields
-(
-    reactions.getOrDefault<Switch>
-    (
-        "writePEqFields",
-        false
-    )
-);
+    writeSources =
+        reactionDict.getOrDefault<Switch>
+        (
+            "writeSources",
+            false
+        );
+}
 
-const Switch writeSFields
-(
-    reactions.getOrDefault<Switch>
-    (
-        "writeSFields",
-        false
-    )
-);
+Switch runConcentration(false);
+Switch writeCFields(false);
 
-const Switch writePEqTotField
-(
-    reactions.getOrDefault<Switch>
-    (
-        "writePEqTotField",
-        false
-    )
-);
+if (controlDict.found("concentration"))
+{
+    const dictionary& cDict = controlDict.subDict("concentration");
 
-const Switch writeSTotField
-(
-    reactions.getOrDefault<Switch>
-    (
-        "writeSTotField",
-        false
-    )
-);
+    runConcentration = cDict.getOrDefault<Switch>("runConcentration", false);
+    writeCFields = cDict.getOrDefault<Switch>("writeCFields", false);
+}
+
+Switch runSaturation(false);
+Switch writeSFields(false);
+Switch writeSTotField(false);
+Switch writePEqFields(false);
+Switch writePEqTotField(false);
+
+if (controlDict.found("saturation"))
+{
+    const dictionary& sDict = controlDict.subDict("saturation");
+
+    runSaturation = sDict.getOrDefault<Switch>("runSaturation", false);
+    writeSFields = sDict.getOrDefault<Switch>("writeSFields", false);
+    writeSTotField = sDict.getOrDefault<Switch>("writeSTotField", false);
+    writePEqFields = sDict.getOrDefault<Switch>("writePEqFields", false);
+    writePEqTotField = sDict.getOrDefault<Switch>("writePEqTotField", false);
+}
+
+if (runSaturation && !runConcentration)
+{
+    FatalIOErrorInFunction(controlDict)
+        << "saturation/runSaturation is true, but "
+        << "concentration/runConcentration is false."
+        << exit(FatalIOError);
+}
 
 //
 // ############################################ create species mass-fraction field ############################################
@@ -160,7 +157,7 @@ forAll(species, i)
                 runTime.timeName(),
                 mesh,
                 IOobject::NO_READ,
-                writeRYFields
+                writeSources
                 ? IOobject::AUTO_WRITE
                 : IOobject::NO_WRITE
             ),
@@ -176,8 +173,6 @@ forAll(species, i)
 
 const dictionary& molarMassDict = reactions.subDict("molarMass");
 
-PtrList<volScalarField> c(Y.size());
-
 const dimensionedScalar rho
 (
     "rho",
@@ -185,37 +180,41 @@ const dimensionedScalar rho
     laminarTransport
 );
 
-forAll(Y, i)
+PtrList<volScalarField> c(Y.size());
+
+if (runConcentration)
 {
-    const volScalarField& Yi = Y[i];
+    forAll(Y, i)
+    {
+        const volScalarField& Yi = Y[i];
 
-    dimensionedScalar Mi
-    (
-        "M_" + species[i],
-        dimMass/dimMoles,
-        molarMassDict.get<scalar>(species[i])
-    );
-
-    c.set
-    (
-        i,
-        new volScalarField
+        dimensionedScalar Mi
         (
-            IOobject
-            (
-                "c_" + species[i],
-                runTime.timeName(),
-                mesh,
-                IOobject::NO_READ,
-                writeCFields
-                ? IOobject::AUTO_WRITE
-                : IOobject::NO_WRITE
-            ),
-            rho*Yi/Mi
-        )
-    );
-}
+            "M_" + species[i],
+            dimMass/dimMoles,
+            molarMassDict.get<scalar>(species[i])
+        );
 
+        c.set
+        (
+            i,
+            new volScalarField
+            (
+                IOobject
+                (
+                    "c_" + species[i],
+                    runTime.timeName(),
+                    mesh,
+                    IOobject::NO_READ,
+                    writeCFields
+                      ? IOobject::AUTO_WRITE
+                      : IOobject::NO_WRITE
+                ),
+                rho*Yi/Mi
+            )
+        );
+    }
+}
 //
 // ############################################ saturation diagnostics  ############################################
 //
@@ -263,55 +262,57 @@ volScalarField S_tot
 wordList henrySpecies(0);
 labelList henrySpeciesIndex(0);
 scalarList henryConstants(0);
-
-if (reactions.found("henryConstants") || reactions.found("henryConstant"))
+if (runSaturation)
 {
-    const dictionary& henryDict = reactions.found("henryConstants")
-      ? reactions.subDict("henryConstants")
-      : reactions.subDict("henryConstant");
-
-    henrySpecies = henryDict.toc();
-    henrySpeciesIndex.setSize(henrySpecies.size(), -1);
-    henryConstants.setSize(henrySpecies.size(), 0.0);
-
-    Info<< "Creating Henry saturation diagnostics for species:" << nl;
-
-    forAll(henrySpecies, hi)
+    if (reactions.found("henryConstants") || reactions.found("henryConstant"))
     {
-        const word& specieName = henrySpecies[hi];
-        const label speciei = species.find(specieName);
+        const dictionary& henryDict = reactions.found("henryConstants")
+        ? reactions.subDict("henryConstants")
+        : reactions.subDict("henryConstant");
 
-        if (speciei < 0)
+        henrySpecies = henryDict.toc();
+        henrySpeciesIndex.setSize(henrySpecies.size(), -1);
+        henryConstants.setSize(henrySpecies.size(), 0.0);
+
+        Info<< "Creating Henry saturation diagnostics for species:" << nl;
+
+        forAll(henrySpecies, hi)
         {
-            FatalIOErrorInFunction(reactions)
-                << "Species " << specieName
-                << " is listed in henryConstants but not in species"
-                << exit(FatalIOError);
+            const word& specieName = henrySpecies[hi];
+            const label speciei = species.find(specieName);
+
+            if (speciei < 0)
+            {
+                FatalIOErrorInFunction(reactions)
+                    << "Species " << specieName
+                    << " is listed in henryConstants but not in species"
+                    << exit(FatalIOError);
+            }
+
+            const scalar H = henryDict.get<scalar>(specieName);
+
+            if (H <= SMALL)
+            {
+                FatalIOErrorInFunction(reactions)
+                    << "Henry constant for species " << specieName
+                    << " must be positive"
+                    << exit(FatalIOError);
+            }
+
+            henrySpeciesIndex[hi] = speciei;
+            henryConstants[hi] = H;
+
+            Info<< "  " << specieName << ": H = " << H
+                << " mol/(m3 Pa)" << nl;
         }
 
-        const scalar H = henryDict.get<scalar>(specieName);
-
-        if (H <= SMALL)
-        {
-            FatalIOErrorInFunction(reactions)
-                << "Henry constant for species " << specieName
-                << " must be positive"
-                << exit(FatalIOError);
-        }
-
-        henrySpeciesIndex[hi] = speciei;
-        henryConstants[hi] = H;
-
-        Info<< "  " << specieName << ": H = " << H
-            << " mol/(m3 Pa)" << nl;
+        Info<< "absolutePressureReference = " << pAbsRef.value()
+            << " Pa" << nl << endl;
     }
-
-    Info<< "absolutePressureReference = " << pAbsRef.value()
-        << " Pa" << nl << endl;
-}
-else
-{
-    Info<< "Henry saturation diagnostics: none" << nl << endl;
+    else
+    {
+        Info<< "Henry saturation diagnostics: none" << nl << endl;
+    }
 }
 
 PtrList<volScalarField> pEqHenry(henrySpecies.size());
@@ -383,14 +384,12 @@ forAll(henrySpecies, hi)
                 ? IOobject::AUTO_WRITE
                 : IOobject::NO_WRITE
             ),
-            // pEqHenry[hi]/(pAbsRef + rho*p)
             pEqHenry[hi]/max(pAbs, pSmall)
         )
     );
 
     pEq_tot += pEqHenry[hi];
 }
-// S_tot = pEq_tot/(pAbsRef + rho*p);
 S_tot = pEq_tot/max(pAbs, pSmall);
 
 pEq_tot.correctBoundaryConditions();
