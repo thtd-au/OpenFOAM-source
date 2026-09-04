@@ -1,57 +1,48 @@
-#ifndef robinMolarFlux_H
-#define robinMolarFlux_H
+#ifndef inertMolarConcentration_H
+#define inertMolarConcentration_H
 
-#include "mixedFvPatchFields.H"
+#include "fixedValueFvPatchFields.H"
 
 namespace Foam
 {
 
-class robinMolarFlux
+class inertMolarConcentration
 :
-    public mixedFvPatchScalarField
+    public fixedValueFvPatchScalarField
 {
-    // Species name as used in constant/reactions.
-    word speciesName_;
-
-    // Stoichiometric coefficient in the electrode half reaction.
-    scalar stoichCoeff_;
-
-    // Number of electrons transferred in the electrode half reaction.
-    scalar nElectrons_;
-
 public:
 
-    TypeName("robinMolarFlux");
+    TypeName("inertMolarConcentration");
 
-    robinMolarFlux
+    inertMolarConcentration
     (
         const fvPatch&,
         const DimensionedField<scalar, volMesh>&
     );
 
-    robinMolarFlux
+    inertMolarConcentration
     (
-        const robinMolarFlux&,
+        const inertMolarConcentration&,
         const fvPatch&,
         const DimensionedField<scalar, volMesh>&,
         const fvPatchFieldMapper&
     );
 
-    robinMolarFlux
+    inertMolarConcentration
     (
         const fvPatch&,
         const DimensionedField<scalar, volMesh>&,
         const dictionary&
     );
 
-    robinMolarFlux
+    inertMolarConcentration
     (
-        const robinMolarFlux&
+        const inertMolarConcentration&
     );
 
-    robinMolarFlux
+    inertMolarConcentration
     (
-        const robinMolarFlux&,
+        const inertMolarConcentration&,
         const DimensionedField<scalar, volMesh>&
     );
 
@@ -59,7 +50,7 @@ public:
     {
         return tmp<fvPatchScalarField>
         (
-            new robinMolarFlux(*this)
+            new inertMolarConcentration(*this)
         );
     }
 
@@ -70,7 +61,7 @@ public:
     {
         return tmp<fvPatchScalarField>
         (
-            new robinMolarFlux(*this, iF)
+            new inertMolarConcentration(*this, iF)
         );
     }
 

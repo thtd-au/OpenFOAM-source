@@ -1,57 +1,54 @@
-#ifndef robinMolarFlux_H
-#define robinMolarFlux_H
+#ifndef pHMolarConcentration_H
+#define pHMolarConcentration_H
 
-#include "mixedFvPatchFields.H"
+#include "fixedValueFvPatchFields.H"
 
 namespace Foam
 {
 
-class robinMolarFlux
+class pHMolarConcentration
 :
-    public mixedFvPatchScalarField
+    public fixedValueFvPatchScalarField
 {
-    // Species name as used in constant/reactions.
-    word speciesName_;
+    // Name of the equilibrium reaction block in constant/reactions.
+    word equilibriumReaction_;
 
-    // Stoichiometric coefficient in the electrode half reaction.
-    scalar stoichCoeff_;
-
-    // Number of electrons transferred in the electrode half reaction.
-    scalar nElectrons_;
+    // Prescribed pH.
+    scalar pH_;
 
 public:
 
-    TypeName("robinMolarFlux");
+    TypeName("pHMolarConcentration");
 
-    robinMolarFlux
+    pHMolarConcentration
     (
         const fvPatch&,
         const DimensionedField<scalar, volMesh>&
     );
 
-    robinMolarFlux
+    pHMolarConcentration
     (
-        const robinMolarFlux&,
+        const pHMolarConcentration&,
         const fvPatch&,
         const DimensionedField<scalar, volMesh>&,
         const fvPatchFieldMapper&
     );
 
-    robinMolarFlux
+    pHMolarConcentration
     (
         const fvPatch&,
         const DimensionedField<scalar, volMesh>&,
         const dictionary&
     );
 
-    robinMolarFlux
+    pHMolarConcentration
     (
-        const robinMolarFlux&
+        const pHMolarConcentration&
     );
 
-    robinMolarFlux
+    pHMolarConcentration
     (
-        const robinMolarFlux&,
+        const pHMolarConcentration&,
         const DimensionedField<scalar, volMesh>&
     );
 
@@ -59,7 +56,7 @@ public:
     {
         return tmp<fvPatchScalarField>
         (
-            new robinMolarFlux(*this)
+            new pHMolarConcentration(*this)
         );
     }
 
@@ -70,7 +67,7 @@ public:
     {
         return tmp<fvPatchScalarField>
         (
-            new robinMolarFlux(*this, iF)
+            new pHMolarConcentration(*this, iF)
         );
     }
 

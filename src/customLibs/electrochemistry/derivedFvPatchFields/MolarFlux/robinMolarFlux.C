@@ -33,6 +33,7 @@ robinMolarFlux::robinMolarFlux
 )
 :
     mixedFvPatchScalarField(p, iF),
+    speciesName_(word::null),
     stoichCoeff_(0.0),
     nElectrons_(1.0)
 {
@@ -51,6 +52,7 @@ robinMolarFlux::robinMolarFlux
 )
 :
     mixedFvPatchScalarField(ptf, p, iF, mapper),
+    speciesName_(ptf.speciesName_),
     stoichCoeff_(ptf.stoichCoeff_),
     nElectrons_(ptf.nElectrons_)
 {}
@@ -64,6 +66,7 @@ robinMolarFlux::robinMolarFlux
 )
 :
     mixedFvPatchScalarField(p, iF),
+    speciesName_(dict.get<word>("species")),
     stoichCoeff_(dict.get<scalar>("stoichCoeff")),
     nElectrons_(dict.get<scalar>("nElectrons"))
 {
@@ -101,6 +104,7 @@ robinMolarFlux::robinMolarFlux
 )
 :
     mixedFvPatchScalarField(ptf),
+    speciesName_(ptf.speciesName_),
     stoichCoeff_(ptf.stoichCoeff_),
     nElectrons_(ptf.nElectrons_)
 {}
@@ -113,6 +117,7 @@ robinMolarFlux::robinMolarFlux
 )
 :
     mixedFvPatchScalarField(ptf, iF),
+    speciesName_(ptf.speciesName_),
     stoichCoeff_(ptf.stoichCoeff_),
     nElectrons_(ptf.nElectrons_)
 {}
@@ -127,19 +132,31 @@ void robinMolarFlux::updateCoeffs()
 
     const fvMesh& mesh = patch().boundaryMesh().mesh();
 
-    word specieName = internalField().name();
-    const word prefix("c_");
-
-    if (specieName.startsWith(prefix))
-    {
-        specieName = specieName.substr(prefix.size());
-    }
+    const word& specieName = speciesName_;
 
     const IOdictionary& reactions =
         mesh.lookupObject<IOdictionary>("reactions");
 
     const IOdictionary& electroChemistry =
         mesh.lookupObject<IOdictionary>("electroChemistry");
+
+    if (!reactions.found("species"))
+    {
+        FatalIOErrorInFunction(reactions)
+            << "Missing species list"
+            << exit(FatalIOError);
+    }
+
+    const wordList species(reactions.lookup("species"));
+
+    if (species.find(specieName) < 0)
+    {
+        FatalIOErrorInFunction(reactions)
+            << "Invalid species '" << specieName
+            << "' for robinMolarFlux." << nl
+            << "Available species are: " << species
+            << exit(FatalIOError);
+    }
 
     if (!reactions.found("diffusivity"))
     {
@@ -307,6 +324,7 @@ void robinMolarFlux::updateCoeffs()
 void robinMolarFlux::write(Ostream& os) const
 {
     fvPatchScalarField::write(os);
+    os.writeEntry("species", speciesName_);
     os.writeEntry("stoichCoeff", stoichCoeff_);
     os.writeEntry("nElectrons", nElectrons_);
     writeEntry("value", os);
