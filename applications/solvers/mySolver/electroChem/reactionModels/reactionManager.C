@@ -15,7 +15,8 @@ reactionManager::reactionManager
     reactionsDict_(reactionsDict),
     reversibleKineticReactions_(),
     monodReactions_(),
-    equilibriumReactions_()
+    waterEquilibriumReactions_(),
+    waterCarbonEquilibriumReactions_()
 {
     readKineticReactions();
     readEquilibriumReactions();
@@ -25,8 +26,10 @@ reactionManager::reactionManager
         << reversibleKineticReactions_.size() << nl
         << "    multiplicative Monod reactions: "
         << monodReactions_.size() << nl
-        << "    equilibrium reactions: "
-        << equilibriumReactions_.size() << nl;
+        << "    water equilibrium reactions: "
+        << waterEquilibriumReactions_.size() << nl
+        << "    water-carbon equilibrium reactions: "
+        << waterCarbonEquilibriumReactions_.size() << nl;
 }
 
 
@@ -148,22 +151,23 @@ void reactionManager::readEquilibriumReactions()
     {
         Info<< "No equilibriumReactions dictionary found." << nl;
 
-        equilibriumReactions_.setSize(0);
+        waterEquilibriumReactions_.setSize(0);
+        waterCarbonEquilibriumReactions_.setSize(0);
         return;
     }
 
     const dictionary& equilibriumDict =
         reactionsDict_.subDict("equilibriumReactions");
 
-    const wordList reactionNames =
-        equilibriumDict.toc();
+    const wordList reactionNames = equilibriumDict.toc();
 
-    equilibriumReactions_.setSize(reactionNames.size());
+    label nWater = 0;
+    label nWaterCarbon = 0;
 
+    // First pass: validate and count concrete equilibrium model types.
     forAll(reactionNames, reactioni)
     {
-        const word& reactionName =
-            reactionNames[reactioni];
+        const word& reactionName = reactionNames[reactioni];
 
         if (!equilibriumDict.isDict(reactionName))
         {
@@ -176,30 +180,100 @@ void reactionManager::readEquilibriumReactions()
         const dictionary& reactionDict =
             equilibriumDict.subDict(reactionName);
 
-        const word modelType
-        (
-            reactionDict.lookup("type")
-        );
+        const word modelType(reactionDict.lookup("type"));
 
-        if (modelType != "waterEquilibrium")
+        if (modelType == "waterEquilibrium")
+        {
+            ++nWater;
+        }
+        else if (modelType == "waterCarbonEquilibrium")
+        {
+            ++nWaterCarbon;
+        }
+        else
         {
             FatalIOErrorInFunction(reactionDict)
                 << "Unsupported equilibrium reaction type "
                 << modelType << nl
-                << "Currently supported type: waterEquilibrium"
+                << "Supported types are:" << nl
+                << "    waterEquilibrium" << nl
+                << "    waterCarbonEquilibrium"
+                << exit(FatalIOError);
+        }
+    }
+
+    waterEquilibriumReactions_.setSize(nWater);
+    waterCarbonEquilibriumReactions_.setSize(nWaterCarbon);
+
+    const dictionary* waterCarbonControlsPtr = nullptr;
+
+    if (nWaterCarbon)
+    {
+        const dictionary& solutionDict = mesh_.solutionDict();
+
+        if (!solutionDict.found("equilibriumProjection"))
+        {
+            FatalIOErrorInFunction(solutionDict)
+                << "waterCarbonEquilibrium requires an equilibriumProjection "
+                << "dictionary in system/fvSolution."
                 << exit(FatalIOError);
         }
 
-        equilibriumReactions_.set
-        (
-            reactioni,
-            new waterEquilibrium
+        const dictionary& projectionDict =
+            solutionDict.subDict("equilibriumProjection");
+
+        if (!projectionDict.found("waterCarbonEquilibrium"))
+        {
+            FatalIOErrorInFunction(projectionDict)
+                << "Missing waterCarbonEquilibrium controls. Required entries:"
+                << nl
+                << "    maxIter" << nl
+                << "    absTol" << nl
+                << "    relTol"
+                << exit(FatalIOError);
+        }
+
+        waterCarbonControlsPtr =
+            &projectionDict.subDict("waterCarbonEquilibrium");
+    }
+
+    label waterI = 0;
+    label waterCarbonI = 0;
+
+    forAll(reactionNames, reactioni)
+    {
+        const word& reactionName = reactionNames[reactioni];
+        const dictionary& reactionDict =
+            equilibriumDict.subDict(reactionName);
+        const word modelType(reactionDict.lookup("type"));
+
+        if (modelType == "waterEquilibrium")
+        {
+            waterEquilibriumReactions_.set
             (
-                reactionName,
-                mesh_,
-                reactionDict
-            )
-        );
+                waterI++,
+                new waterEquilibrium
+                (
+                    reactionName,
+                    mesh_,
+                    reactionDict
+                )
+            );
+        }
+        else if (modelType == "waterCarbonEquilibrium")
+        {
+            waterCarbonEquilibriumReactions_.set
+            (
+                waterCarbonI++,
+                new waterCarbonEquilibrium
+                (
+                    reactionName,
+                    mesh_,
+                    reactionDict,
+                    *waterCarbonControlsPtr
+                )
+            );
+        }
     }
 }
 
@@ -253,11 +327,8 @@ tmp<volScalarField> reactionManager::kineticSource
     const word& speciesName
 ) const
 {
-    tmp<volScalarField> tCombinedSource =
-        zeroSource(speciesName);
-
-    volScalarField& combinedSource =
-        tCombinedSource.ref();
+    tmp<volScalarField> tCombinedSource = zeroSource(speciesName);
+    volScalarField& combinedSource = tCombinedSource.ref();
 
     forAll(monodReactions_, reactioni)
     {
@@ -268,8 +339,15 @@ tmp<volScalarField> reactionManager::kineticSource
     forAll(reversibleKineticReactions_, reactioni)
     {
         combinedSource +=
-            reversibleKineticReactions_[reactioni]
-           .source(speciesName);
+            reversibleKineticReactions_[reactioni].source(speciesName);
+    }
+
+    // waterCarbonEquilibrium owns slow r1/r3 chemistry internally but exposes
+    // it here so it enters the same transported kinetic source Rc.
+    forAll(waterCarbonEquilibriumReactions_, reactioni)
+    {
+        combinedSource +=
+            waterCarbonEquilibriumReactions_[reactioni].source(speciesName);
     }
 
     return tCombinedSource;
@@ -278,9 +356,14 @@ tmp<volScalarField> reactionManager::kineticSource
 
 void reactionManager::applyEquilibriumReactions()
 {
-    forAll(equilibriumReactions_, reactioni)
+    forAll(waterEquilibriumReactions_, reactioni)
     {
-        equilibriumReactions_[reactioni].apply();
+        waterEquilibriumReactions_[reactioni].apply();
+    }
+
+    forAll(waterCarbonEquilibriumReactions_, reactioni)
+    {
+        waterCarbonEquilibriumReactions_[reactioni].apply();
     }
 }
 

@@ -1,6 +1,7 @@
 reactionModels/kineticReactions/reversibleKineticReaction/reversibleKineticReaction.C
 reactionModels/kineticReactions/multiplicativeMonod/multiplicativeMonod.C
 reactionModels/equilibriumReactions/waterEquilibrium/waterEquilibrium.C
+reactionModels/equilibriumReactions/waterCarbonEquilibrium/waterCarbonEquilibrium.C
 reactionModels/reactionManager.C
 
 electroChem.C

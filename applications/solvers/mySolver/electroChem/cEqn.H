@@ -40,15 +40,9 @@ const scalar domainVolume = gSum(mesh.V());
 // Active species values are overwritten immediately after their solves.
 forAll(c, i)
 {
-    cMinBeforeClipping[i] =
-        gMin(c[i].primitiveField());
-
-    cMeanBeforeClipping[i] =
-        gSum(c[i].primitiveField()*mesh.V())
-       /domainVolume;
-
-    cMaxBeforeClipping[i] =
-        gMax(c[i].primitiveField());
+    cMinBeforeClipping[i] = gMin(c[i].primitiveField());
+    cMeanBeforeClipping[i] = gSum(c[i].primitiveField()*mesh.V())/domainVolume;
+    cMaxBeforeClipping[i] = gMax(c[i].primitiveField());
 }
 
 // Solve concentration transport
@@ -57,6 +51,7 @@ forAll(c, i)
     if (i != inertIndex)
     {
         volScalarField& ci = c[i];
+        // const scalarField cBeforeTransport(ci.primitiveField());
 
         dimensionedScalar Di
         (
@@ -102,6 +97,175 @@ forAll(c, i)
         fvOptions.constrain(ciEqn);
         ciEqn.solve(ci.name());
         fvOptions.correct(ci);
+
+        // // ------------------------------------------------------------ //
+        // // Temporary transport/kinetic balance diagnostics for H+/OH-
+        // // ------------------------------------------------------------ //
+
+        // if
+        // (
+        //     species[i] == "Hplus"
+        // || species[i] == "OHminus"
+        // )
+        // {
+        //     const scalar dt = runTime.deltaTValue();
+
+        //     // Actual concentration change produced by this species solve
+        //     scalarField deltaC
+        //     (
+        //         ci.primitiveField() - cBeforeTransport
+        //     );
+
+        //     // Equivalent average rate over this timestep
+        //     scalarField deltaCRate(deltaC/dt);
+
+        //     // Reconstruct the spatial terms using the just-solved
+        //     // pre-clipping concentration field.
+        //     volScalarField advTerm
+        //     (
+        //         IOobject
+        //         (
+        //             "debugAdv_" + species[i],
+        //             runTime.timeName(),
+        //             mesh,
+        //             IOobject::NO_READ,
+        //             IOobject::NO_WRITE
+        //         ),
+        //         -fvc::div(phi, ci)
+        //     );
+
+        //     volScalarField diffTerm
+        //     (
+        //         IOobject
+        //         (
+        //             "debugDiff_" + species[i],
+        //             runTime.timeName(),
+        //             mesh,
+        //             IOobject::NO_READ,
+        //             IOobject::NO_WRITE
+        //         ),
+        //         fvc::laplacian(Di, ci)
+        //     );
+
+        //     // Rebuild migration with the solved pre-clipping ci
+        //     surfaceScalarField debugMigrationFlux
+        //     (
+        //         IOobject
+        //         (
+        //             "debugMigrationFlux_" + species[i],
+        //             runTime.timeName(),
+        //             mesh,
+        //             IOobject::NO_READ,
+        //             IOobject::NO_WRITE
+        //         ),
+        //         fvc::interpolate
+        //         (
+        //             Di*zi*Fdim/(Rgas*T)*ci
+        //         )
+        //     * gradPhiEFlux
+        //     );
+
+        //     volScalarField migTerm
+        //     (
+        //         IOobject
+        //         (
+        //             "debugMig_" + species[i],
+        //             runTime.timeName(),
+        //             mesh,
+        //             IOobject::NO_READ,
+        //             IOobject::NO_WRITE
+        //         ),
+        //         fvc::div(debugMigrationFlux)
+        //     );
+
+        //     const scalar actualMin =
+        //         gMin(deltaCRate);
+
+        //     const scalar actualMean =
+        //         gSum(deltaCRate*mesh.V())/domainVolume;
+
+        //     const scalar actualMax =
+        //         gMax(deltaCRate);
+
+        //     const scalar advMin =
+        //         gMin(advTerm.primitiveField());
+
+        //     const scalar advMean =
+        //         gSum(advTerm.primitiveField()*mesh.V())/domainVolume;
+
+        //     const scalar advMax =
+        //         gMax(advTerm.primitiveField());
+
+        //     const scalar diffMin =
+        //         gMin(diffTerm.primitiveField());
+
+        //     const scalar diffMean =
+        //         gSum(diffTerm.primitiveField()*mesh.V())/domainVolume;
+
+        //     const scalar diffMax =
+        //         gMax(diffTerm.primitiveField());
+
+        //     const scalar migMin =
+        //         gMin(migTerm.primitiveField());
+
+        //     const scalar migMean =
+        //         gSum(migTerm.primitiveField()*mesh.V())/domainVolume;
+
+        //     const scalar migMax =
+        //         gMax(migTerm.primitiveField());
+
+        //     const scalar kinMin =
+        //         gMin(Rc[i].primitiveField());
+
+        //     const scalar kinMean =
+        //         gSum(Rc[i].primitiveField()*mesh.V())/domainVolume;
+
+        //     const scalar kinMax =
+        //         gMax(Rc[i].primitiveField());
+
+        //     const scalar kinDeltaMean = dt*kinMean;
+        //     const scalar kinDeltaMin  = dt*kinMin;
+        //     const scalar kinDeltaMax  = dt*kinMax;
+
+        //     Info<< "Pre-equilibrium transport balance for "
+        //         << species[i] << ":" << nl
+
+        //         << "  actual dc/dt min/mean/max = "
+        //         << actualMin << " / "
+        //         << actualMean << " / "
+        //         << actualMax << nl
+
+        //         << "  advection    min/mean/max = "
+        //         << advMin << " / "
+        //         << advMean << " / "
+        //         << advMax << nl
+
+        //         << "  diffusion    min/mean/max = "
+        //         << diffMin << " / "
+        //         << diffMean << " / "
+        //         << diffMax << nl
+
+        //         << "  migration    min/mean/max = "
+        //         << migMin << " / "
+        //         << migMean << " / "
+        //         << migMax << nl
+
+        //         << "  kinetic      min/mean/max = "
+        //         << kinMin << " / "
+        //         << kinMean << " / "
+        //         << kinMax
+        //         << " [mol/m3/s]"
+        //         << nl 
+                
+        //         << "  dt*kinetic    min/mean/max = "
+        //         << kinDeltaMin << " / "
+        //         << kinDeltaMean << " / "
+        //         << kinDeltaMax
+        //         << " [mol/m3]"
+        //         << nl
+                
+        //         << endl;
+        // }
 
         // Save the raw transport solution before positivity clipping.
         if (printCFieldsBeforeClipping)
@@ -175,6 +339,41 @@ if(diagWaterEquilibriumA  && reactionMgr.hasWaterEquilibrium())
     }
 }
 
+// // ------------------------------------------------------------ //
+// // TEMPORARY DIAGNOSTIC:
+// // Water equilibrium departure after transport and before
+// // fast equilibrium projection.
+// // ------------------------------------------------------------ //
+// {
+//     const label hIndex = species.find("Hplus");
+//     const label ohIndex = species.find("OHminus");
+
+//     if (hIndex >= 0 && ohIndex >= 0)
+//     {
+//         const scalar Kw = 1.0e-8;
+
+//         const scalarField& h =
+//             c[hIndex].primitiveField();
+
+//         const scalarField& oh =
+//             c[ohIndex].primitiveField();
+
+//         scalarField Qw(h.size(), 0.0);
+
+//         forAll(Qw, celli)
+//         {
+//             Qw[celli] = h[celli]*oh[celli]/Kw;
+//         }
+
+//         Info<< "Water equilibrium quotient before projection:"
+//             << nl
+//             << "  Qw = cH*cOH/Kw min/mean/max = "
+//             << gMin(Qw) << " / "
+//             << gSum(Qw*mesh.V())/domainVolume << " / "
+//             << gMax(Qw)
+//             << nl << endl;
+//     }
+// }
 
 // Apply all fast equilibrium projections only after all species transport solves.
 reactionMgr.applyEquilibriumReactions();
