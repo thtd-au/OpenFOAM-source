@@ -111,7 +111,7 @@ forAll(c, i)
             cMaxBeforeClipping[i] =
                 gMax(ci.primitiveField());
         }
-
+        
         // ci.max(0.0);
         ci.correctBoundaryConditions();
     }
