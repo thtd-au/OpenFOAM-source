@@ -1,50 +1,57 @@
-#ifndef pHMassFractionFvPatchScalarField_H
-#define pHMassFractionFvPatchScalarField_H
+#ifndef robinMolarFlux_H
+#define robinMolarFlux_H
 
-#include "fixedValueFvPatchFields.H"
+#include "mixedFvPatchFields.H"
 
 namespace Foam
 {
 
-class pHMassFractionFvPatchScalarField
+class robinMolarFlux
 :
-    public fixedValueFvPatchScalarField
+    public mixedFvPatchScalarField
 {
-    scalar pH_;
+    // Species name as used in constant/reactions.
+    word speciesName_;
+
+    // Stoichiometric coefficient in the electrode half reaction.
+    scalar stoichCoeff_;
+
+    // Number of electrons transferred in the electrode half reaction.
+    scalar nElectrons_;
 
 public:
 
-    TypeName("pHMassFraction");
+    TypeName("robinMolarFlux");
 
-    pHMassFractionFvPatchScalarField
+    robinMolarFlux
     (
         const fvPatch&,
         const DimensionedField<scalar, volMesh>&
     );
 
-    pHMassFractionFvPatchScalarField
+    robinMolarFlux
     (
-        const pHMassFractionFvPatchScalarField&,
+        const robinMolarFlux&,
         const fvPatch&,
         const DimensionedField<scalar, volMesh>&,
         const fvPatchFieldMapper&
     );
 
-    pHMassFractionFvPatchScalarField
+    robinMolarFlux
     (
         const fvPatch&,
         const DimensionedField<scalar, volMesh>&,
         const dictionary&
     );
 
-    pHMassFractionFvPatchScalarField
+    robinMolarFlux
     (
-        const pHMassFractionFvPatchScalarField&
+        const robinMolarFlux&
     );
 
-    pHMassFractionFvPatchScalarField
+    robinMolarFlux
     (
-        const pHMassFractionFvPatchScalarField&,
+        const robinMolarFlux&,
         const DimensionedField<scalar, volMesh>&
     );
 
@@ -52,7 +59,7 @@ public:
     {
         return tmp<fvPatchScalarField>
         (
-            new pHMassFractionFvPatchScalarField(*this)
+            new robinMolarFlux(*this)
         );
     }
 
@@ -63,7 +70,7 @@ public:
     {
         return tmp<fvPatchScalarField>
         (
-            new pHMassFractionFvPatchScalarField(*this, iF)
+            new robinMolarFlux(*this, iF)
         );
     }
 
@@ -72,7 +79,7 @@ public:
     virtual void write(Ostream&) const;
 };
 
-}
+} // End namespace Foam
 
 #endif
 

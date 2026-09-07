@@ -1,48 +1,48 @@
-#ifndef inertMassFractionFvPatchScalarField_H
-#define inertMassFractionFvPatchScalarField_H
+#ifndef inertMolarConcentration_H
+#define inertMolarConcentration_H
 
 #include "fixedValueFvPatchFields.H"
 
 namespace Foam
 {
 
-class inertMassFractionFvPatchScalarField
+class inertMolarConcentration
 :
     public fixedValueFvPatchScalarField
 {
 public:
 
-    TypeName("inertMassFraction");
+    TypeName("inertMolarConcentration");
 
-    inertMassFractionFvPatchScalarField
+    inertMolarConcentration
     (
         const fvPatch&,
         const DimensionedField<scalar, volMesh>&
     );
 
-    inertMassFractionFvPatchScalarField
+    inertMolarConcentration
     (
-        const inertMassFractionFvPatchScalarField&,
+        const inertMolarConcentration&,
         const fvPatch&,
         const DimensionedField<scalar, volMesh>&,
         const fvPatchFieldMapper&
     );
 
-    inertMassFractionFvPatchScalarField
+    inertMolarConcentration
     (
         const fvPatch&,
         const DimensionedField<scalar, volMesh>&,
         const dictionary&
     );
 
-    inertMassFractionFvPatchScalarField
+    inertMolarConcentration
     (
-        const inertMassFractionFvPatchScalarField&
+        const inertMolarConcentration&
     );
 
-    inertMassFractionFvPatchScalarField
+    inertMolarConcentration
     (
-        const inertMassFractionFvPatchScalarField&,
+        const inertMolarConcentration&,
         const DimensionedField<scalar, volMesh>&
     );
 
@@ -50,7 +50,7 @@ public:
     {
         return tmp<fvPatchScalarField>
         (
-            new inertMassFractionFvPatchScalarField(*this)
+            new inertMolarConcentration(*this)
         );
     }
 
@@ -61,7 +61,7 @@ public:
     {
         return tmp<fvPatchScalarField>
         (
-            new inertMassFractionFvPatchScalarField(*this, iF)
+            new inertMolarConcentration(*this, iF)
         );
     }
 
@@ -70,7 +70,7 @@ public:
     virtual void write(Ostream&) const;
 };
 
-}
+} // End namespace Foam
 
 #endif
 

@@ -9,7 +9,7 @@
 #include "kineticReactions/reversibleKineticReaction/reversibleKineticReaction.H"
 #include "kineticReactions/multiplicativeMonod/multiplicativeMonod.H"
 #include "equilibriumReactions/waterEquilibrium/waterEquilibrium.H"
-
+#include "equilibriumReactions/waterCarbonEquilibrium/waterCarbonEquilibrium.H"
 
 namespace Foam
 {
@@ -25,7 +25,8 @@ private:
 
     PtrList<reversibleKineticReaction> reversibleKineticReactions_;
     PtrList<multiplicativeMonod> monodReactions_;
-    PtrList<waterEquilibrium> equilibriumReactions_;
+    PtrList<waterEquilibrium> waterEquilibriumReactions_;
+    PtrList<waterCarbonEquilibrium> waterCarbonEquilibriumReactions_;
 
     void readKineticReactions();
     void readEquilibriumReactions();
@@ -52,12 +53,40 @@ public:
 
     label nKineticReactions() const
     {
-        return monodReactions_.size() + reversibleKineticReactions_.size();
+        return monodReactions_.size() 
+        + reversibleKineticReactions_.size()
+        + waterCarbonEquilibriumReactions_.size();
     }
 
     label nEquilibriumReactions() const
     {
-        return equilibriumReactions_.size();
+        return
+            waterEquilibriumReactions_.size()
+          + waterCarbonEquilibriumReactions_.size();
+    }
+
+    // Accessors for waterEquilibrium diagnostics  
+    bool hasWaterEquilibrium() const
+    {
+        return !waterEquilibriumReactions_.empty();
+    }
+
+    label nWaterEquilibriumReactions() const
+    {
+        return waterEquilibriumReactions_.size();
+    }
+
+    const waterEquilibrium& waterEquilibriumReaction
+    (
+        const label reactioni
+    ) const
+    {
+        return waterEquilibriumReactions_[reactioni];
+    }
+
+    bool hasWaterCarbonEquilibrium() const
+    {
+        return !waterCarbonEquilibriumReactions_.empty();
     }
 };
 

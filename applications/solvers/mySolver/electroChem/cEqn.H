@@ -4,25 +4,17 @@ label inertIndex = species.find(inertSpecie);
 const dictionary& diffusivityDict = reactions.subDict("diffusivity");
 const bool hasChargeNumber = reactions.found("chargeNumber");
 
-dimensionedScalar T
+surfaceScalarField gradPhiEFlux
 (
-    "T",
-    dimensionSet(0, 0, 0, 1, 0, 0, 0),
-    reactions.getOrDefault<scalar>("temperature", 298.15)
-);
-
-dimensionedScalar Rgas
-(
-    "R",
-    dimensionSet(1, 2, -2, -1, -1, 0, 0),
-    8.31446261815324
-);
-
-dimensionedScalar Fdim
-(
-    "FaradayConstant",
-    dimensionSet(0, 0, 1, 0, -1, 1, 0),
-    reactions.getOrDefault<scalar>("FaradayConstant", 96485.3329)
+    IOobject
+    (
+        "gradPhiEFlux",
+        runTime.timeName(),
+        mesh,
+        IOobject::NO_READ,
+        IOobject::NO_WRITE
+    ),
+    fvc::interpolate(gradPhiE) & mesh.Sf()
 );
 
 forAll(Rc, i)
@@ -48,15 +40,9 @@ const scalar domainVolume = gSum(mesh.V());
 // Active species values are overwritten immediately after their solves.
 forAll(c, i)
 {
-    cMinBeforeClipping[i] =
-        gMin(c[i].primitiveField());
-
-    cMeanBeforeClipping[i] =
-        gSum(c[i].primitiveField()*mesh.V())
-       /domainVolume;
-
-    cMaxBeforeClipping[i] =
-        gMax(c[i].primitiveField());
+    cMinBeforeClipping[i] = gMin(c[i].primitiveField());
+    cMeanBeforeClipping[i] = gSum(c[i].primitiveField()*mesh.V())/domainVolume;
+    cMaxBeforeClipping[i] = gMax(c[i].primitiveField());
 }
 
 // Solve concentration transport
@@ -65,6 +51,7 @@ forAll(c, i)
     if (i != inertIndex)
     {
         volScalarField& ci = c[i];
+        // const scalarField cBeforeTransport(ci.primitiveField());
 
         dimensionedScalar Di
         (
@@ -92,8 +79,7 @@ forAll(c, i)
                 IOobject::NO_WRITE
             ),
             fvc::interpolate(Di*zi*Fdim/(Rgas*T)*ci)
-          * fvc::snGrad(phiE)
-          * mesh.magSf()
+          * gradPhiEFlux
         );
 
         fvScalarMatrix ciEqn
@@ -125,20 +111,87 @@ forAll(c, i)
             cMaxBeforeClipping[i] =
                 gMax(ci.primitiveField());
         }
-        
-        // Do not clip here. Equilibrium reactions must see the raw transported
-        // concentrations so deficits (negative values) are retained in their
-        // conserved quantities, e.g. A = [H+] - [OH-].
+
         // ci.max(0.0);
         ci.correctBoundaryConditions();
     }
 }
+
+// Store internal concentrations immediately before the fast equilibrium projection. 
+List<scalarField> cBeforeEquilibrium(c.size());
+
+forAll(c, i)
+{
+    cBeforeEquilibrium[i] = c[i].primitiveField();
+
+    Req[i] =
+        dimensionedScalar
+        (
+            "zero",
+            dimMoles/dimVolume/dimTime,
+            0.0
+        );
+}
+
+// Store the water-equilibrium invariant before projection.
+// Only allocate/populate this when the diagnostic is requested and a waterEquilibrium model actually exists.
+List<scalarField> waterAPreclip;
+
+if(diagWaterEquilibriumA  && reactionMgr.hasWaterEquilibrium())
+{
+    waterAPreclip.setSize
+    (
+        reactionMgr.nWaterEquilibriumReactions()
+    );
+
+    for
+    (
+        label reactioni = 0;
+        reactioni < reactionMgr.nWaterEquilibriumReactions();
+        ++reactioni
+    )
+    {
+        const waterEquilibrium& waterEq =
+            reactionMgr.waterEquilibriumReaction(reactioni);
+
+        const volScalarField& cH =
+            mesh.lookupObject<volScalarField>
+            (
+                "c_" + waterEq.HplusName()
+            );
+
+        const volScalarField& cOH =
+            mesh.lookupObject<volScalarField>
+            (
+                "c_" + waterEq.OHminusName()
+            );
+
+        waterAPreclip[reactioni] = cH.primitiveField()- cOH.primitiveField();
+    }
+}
+
 // Apply all fast equilibrium projections only after all species transport solves.
 reactionMgr.applyEquilibriumReactions();
 
-// Clip only after the equilibrium projection has had a chance to account for
-// any local species deficit. Equilibrium species should already be positive;
-// this also retains the existing non-negative safeguard for all other species.
+const scalar invDeltaT = 1.0/runTime.deltaTValue();
+
+forAll(c, i)
+{
+    scalarField& ReqInternal = Req[i].primitiveFieldRef();
+
+    ReqInternal =
+        (c[i].primitiveField() - cBeforeEquilibrium[i])*invDeltaT;
+
+    // Equilibrium source bookkeeping is intentionally internal-cell only.
+    // Boundary changes caused by correctBoundaryConditions() belong to the
+    // boundary transport balance, not the volume equilibrium source.
+    forAll(Req[i].boundaryField(), patchi)
+    {
+        Req[i].boundaryFieldRef()[patchi] == 0.0;
+    }
+}
+
+// Positivity enforcement only AFTER equilibrium projection.
 forAll(c, i)
 {
     if (i != inertIndex)
@@ -150,6 +203,8 @@ forAll(c, i)
 
 if (pHActive)
 {
+    Info<< "pH fields:" << nl;
+
     volScalarField& pH =
         pHPtr();
 
@@ -181,11 +236,12 @@ if (pHActive)
 
     if (printPH)
     {
-        Info<< "pH min/mean/max:"
+        Info<< "  pH min/mean/max:"
             << gMin(pH)
             << "/" << gAverage(pH)
             << "/" << gMax(pH)
             << nl;
     }
+    Info<< endl;
 }
 

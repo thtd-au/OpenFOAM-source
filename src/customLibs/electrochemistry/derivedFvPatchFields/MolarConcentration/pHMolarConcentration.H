@@ -1,50 +1,54 @@
-#ifndef pHConcentration_H
-#define pHConcentration_H
+#ifndef pHMolarConcentration_H
+#define pHMolarConcentration_H
 
 #include "fixedValueFvPatchFields.H"
 
 namespace Foam
 {
 
-class pHConcentration
+class pHMolarConcentration
 :
     public fixedValueFvPatchScalarField
 {
+    // Name of the equilibrium reaction block in constant/reactions.
+    word equilibriumReaction_;
+
+    // Prescribed pH.
     scalar pH_;
 
 public:
 
-    TypeName("pHConcentration");
+    TypeName("pHMolarConcentration");
 
-    pHConcentration
+    pHMolarConcentration
     (
         const fvPatch&,
         const DimensionedField<scalar, volMesh>&
     );
 
-    pHConcentration
+    pHMolarConcentration
     (
-        const pHConcentration&,
+        const pHMolarConcentration&,
         const fvPatch&,
         const DimensionedField<scalar, volMesh>&,
         const fvPatchFieldMapper&
     );
 
-    pHConcentration
+    pHMolarConcentration
     (
         const fvPatch&,
         const DimensionedField<scalar, volMesh>&,
         const dictionary&
     );
 
-    pHConcentration
+    pHMolarConcentration
     (
-        const pHConcentration&
+        const pHMolarConcentration&
     );
 
-    pHConcentration
+    pHMolarConcentration
     (
-        const pHConcentration&,
+        const pHMolarConcentration&,
         const DimensionedField<scalar, volMesh>&
     );
 
@@ -52,7 +56,7 @@ public:
     {
         return tmp<fvPatchScalarField>
         (
-            new pHConcentration(*this)
+            new pHMolarConcentration(*this)
         );
     }
 
@@ -63,7 +67,7 @@ public:
     {
         return tmp<fvPatchScalarField>
         (
-            new pHConcentration(*this, iF)
+            new pHMolarConcentration(*this, iF)
         );
     }
 
@@ -72,7 +76,7 @@ public:
     virtual void write(Ostream&) const;
 };
 
-}
+} // End namespace Foam
 
 #endif
 
